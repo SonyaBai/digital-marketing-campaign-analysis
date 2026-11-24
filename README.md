@@ -2,7 +2,7 @@
 
 **Sonya Baigildin** · [github.com/SonyaBai](https://github.com/SonyaBai)
 
-A performance account spent ₹30,590,879.82 across 11 campaigns in February 2021 and booked ₹42,889,366.00 of revenue. The blended return looks acceptable. The campaign mix does not. Five campaigns lost money, and one of them, YouTube blogger, produced 91.50% of the month's gross profit on 13.27% of the spend. This project measures where the return came from, where the funnel leaked, and which lines should be paused before another rupee is added.
+A performance account spent $420,173.84 across 11 campaigns in February 2021 and booked $589,096.75 of revenue. The blended return looks acceptable. The campaign mix does not. Five campaigns lost money, and one of them, YouTube blogger, produced 91.50% of the month's gross profit on 13.27% of the spend. This project measures where the return came from, where the funnel leaked, and which lines should be paused before another dollar is added. Figures below are US dollars.
 
 ## Dataset
 
@@ -13,10 +13,22 @@ Public Kaggle dataset [Analyze the Marketing Spending](https://www.kaggle.com/da
 | Rows | 308 campaign-days |
 | Campaigns | 11, one row each day |
 | Window | 1–28 February 2021 |
-| Currency | INR, as recorded |
+| Currency in the raw file | INR, as recorded |
 | Columns | `id`, `c_date`, `campaign_name`, `category`, `campaign_id`, `impressions`, `mark_spent`, `clicks`, `leads`, `orders`, `revenue` |
 
 Categories in the file: social (6 campaigns), search (2), influencer (2), media (1).
+
+## Currency conversion
+
+The raw file stays in rupees. Every amount in the cleaned table, the database, the charts, and this write-up is US dollars.
+
+The rate is **72.8053 INR per USD**, the February 2021 monthly average from the Federal Reserve Board's [G.5 Foreign Exchange Rates](https://www.federalreserve.gov/releases/g5/20210301/) release of 1 March 2021 (India, rupee). That average is the mean of daily noon buying rates for cable transfers in New York. The constant is `INR_PER_USD` in `src/constants.py`.
+
+The Reserve Bank of India's Handbook of Statistics, [Table 204](https://www.rbi.org.in/scripts/PublicationsView.aspx?id=23378), reports 72.7565 for the same month (the average of the FBIL reference rate). This project uses the Federal Reserve figure only, so there is one rate.
+
+Each campaign-day is divided by 72.8053 and rounded half-up to the cent. Totals are sums of those cents. Converting the month's rupee total in one step would give spend of $420,173.80; summing the rounded days gives **$420,173.84**. The four-cent gap is the rounding. Gross profit is revenue minus spend in cents, not a second conversion.
+
+ROMI, CTR, and the two conversion rates do not depend on the currency. A constant rate cancels in ROMI, and the cent rounding does not move the portfolio, campaign, category, tier, targeting, or weekday rates at the precision shown here.
 
 ## Tools
 
@@ -42,7 +54,7 @@ Gross profit here is **revenue minus media spend**. The file has no product cost
 | Profit per order | gross profit / orders |
 | CPM | mark_spent / impressions × 1,000 |
 
-ROMI is shown as a percentage: 40.20% means the ratio is 0.4020. CTR is shown to three decimal places because it sits well below 1%. Other rates are shown to two decimal places. Money is rounded half-up to the paisa. `python analysis.py` prints the figures below.
+ROMI is shown as a percentage: 40.20% means the ratio is 0.4020. CTR is shown to three decimal places because it sits well below 1%. Other rates are shown to two decimal places. Money is rounded half-up to the cent. `python analysis.py` prints the figures below.
 
 ## Cleaning
 
@@ -58,15 +70,15 @@ Derived columns, saved in `data/processed/marketing_clean.csv`:
 | `city_tier` | `tier1` or `tier2` for the four city campaigns, otherwise `not_tiered` |
 | `targeting` | see the targeting section; this is not a source column |
 | `weekday`, `is_weekend` | Saturday and Sunday are the weekend. 1 February 2021 was a Monday |
-| `gross_profit` | revenue − mark_spent, in INR |
+| `gross_profit` | revenue − mark_spent, in USD |
 
 ## Portfolio
 
 | Spend | Revenue | Gross profit | ROMI | Orders | CTR | Click-to-lead | Lead-to-order | CPC | CPL | CAC | AOV |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ₹30,590,879.82 | ₹42,889,366.00 | ₹12,298,486.18 | 40.20% | 8,043 | 0.190% | 2.19% | 12.26% | ₹10.20 | ₹466.47 | ₹3,803.42 | ₹5,332.51 |
+| $420,173.84 | $589,096.75 | $168,922.91 | 40.20% | 8,043 | 0.190% | 2.19% | 12.26% | $0.14 | $6.41 | $52.24 | $73.24 |
 
-Impressions 1,577,722,399. Clicks 2,999,919. Leads 65,579. CPM ₹19.39.
+Impressions 1,577,722,399. Clicks 2,999,919. Leads 65,579. CPM $0.27.
 
 The blended CTR is depressed by the banner. Banner partner is 67.71% of impressions at a 0.039% CTR. Without it, CTR is 0.506%. Click-to-lead moves from 2.19% to 2.15%, and lead-to-order from 12.26% to 11.69%. The banner's distortion is at the top of the funnel. The banner's own lead-to-order is 15.43%, so removing it lowers the close rate slightly.
 
@@ -78,30 +90,30 @@ Six campaigns earned more than they spent. Five did not. The portfolio is profit
 
 | Campaign | Spend | Revenue | Gross profit | ROMI | Orders | Spend share |
 | --- | --- | --- | --- | --- | --- | --- |
-| YouTube blogger | ₹4,057,936.51 | ₹15,311,433.00 | ₹11,253,496.49 | 277.32% | 1,914 | 13.27% |
-| Facebook retargeting | ₹266,466.22 | ₹536,919.00 | ₹270,452.78 | 101.50% | 108 | 0.87% |
-| Google hot | ₹1,199,998.76 | ₹2,205,747.00 | ₹1,005,748.24 | 83.81% | 281 | 3.92% |
-| Instagram tier 1 | ₹2,565,277.25 | ₹4,544,124.00 | ₹1,978,846.75 | 77.14% | 758 | 8.39% |
-| Instagram blogger | ₹4,247,367.57 | ₹5,808,454.00 | ₹1,561,086.43 | 36.75% | 1,100 | 13.88% |
-| Banner partner | ₹5,026,674.76 | ₹6,152,960.00 | ₹1,126,285.24 | 22.41% | 1,566 | 16.43% |
-| Facebook tier 1 | ₹2,564,793.48 | ₹2,396,412.00 | −₹168,381.48 | −6.57% | 474 | 8.38% |
-| Facebook tier 2 | ₹4,693,870.97 | ₹3,463,306.00 | −₹1,230,564.97 | −26.22% | 688 | 15.34% |
-| Google wide | ₹2,260,401.31 | ₹1,499,318.00 | −₹761,083.31 | −33.67% | 547 | 7.39% |
-| Instagram tier 2 | ₹1,066,153.75 | ₹670,460.00 | −₹395,693.75 | −37.11% | 313 | 3.49% |
-| Facebook lookalike | ₹2,641,939.24 | ₹300,233.00 | −₹2,341,706.24 | −88.64% | 294 | 8.64% |
+| YouTube blogger | $55,736.85 | $210,306.56 | $154,569.71 | 277.32% | 1,914 | 13.27% |
+| Facebook retargeting | $3,660.00 | $7,374.73 | $3,714.73 | 101.50% | 108 | 0.87% |
+| Google hot | $16,482.30 | $30,296.51 | $13,814.21 | 83.81% | 281 | 3.92% |
+| Instagram tier 1 | $35,234.75 | $62,414.73 | $27,179.98 | 77.14% | 758 | 8.39% |
+| Instagram blogger | $58,338.73 | $79,780.66 | $21,441.93 | 36.75% | 1,100 | 13.88% |
+| Banner partner | $69,042.71 | $84,512.53 | $15,469.82 | 22.41% | 1,566 | 16.43% |
+| Facebook tier 1 | $35,228.10 | $32,915.34 | −$2,312.76 | −6.57% | 474 | 8.38% |
+| Facebook tier 2 | $64,471.55 | $47,569.42 | −$16,902.13 | −26.22% | 688 | 15.34% |
+| Google wide | $31,047.22 | $20,593.52 | −$10,453.70 | −33.67% | 547 | 7.39% |
+| Instagram tier 2 | $14,643.92 | $9,208.96 | −$5,434.96 | −37.11% | 313 | 3.49% |
+| Facebook lookalike | $36,287.71 | $4,123.79 | −$32,163.92 | −88.64% | 294 | 8.64% |
 
-YouTube blogger took 13.27% of spend, produced 35.70% of revenue, and produced 91.50% of gross profit. Influencer as a category (YouTube plus Instagram blogger) made ₹12,814,582.92. Social, search, and media together lost ₹516,096.74. The month's profit is an influencer result with a paid-media problem attached.
+YouTube blogger took 13.27% of spend, produced 35.70% of revenue, and produced 91.50% of gross profit. Influencer as a category (YouTube plus Instagram blogger) made $176,011.64. Social, search, and media together lost $7,088.73. The month's profit is an influencer result with a paid-media problem attached.
 
 ## 2. Performance by category
 
 | Category | Spend | Revenue | Gross profit | ROMI | Orders | CTR | Lead-to-order | CAC | AOV |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Influencer | ₹8,305,304.08 | ₹21,119,887.00 | ₹12,814,582.92 | 154.29% | 3,014 | 0.964% | 17.79% | ₹2,755.58 | ₹7,007.26 |
-| Media | ₹5,026,674.76 | ₹6,152,960.00 | ₹1,126,285.24 | 22.41% | 1,566 | 0.039% | 15.43% | ₹3,209.88 | ₹3,929.09 |
-| Search | ₹3,460,400.07 | ₹3,705,065.00 | ₹244,664.93 | 7.07% | 828 | 0.457% | 11.65% | ₹4,179.23 | ₹4,474.72 |
-| Social | ₹13,798,500.91 | ₹11,911,454.00 | −₹1,887,046.91 | −13.68% | 2,635 | 0.417% | 8.40% | ₹5,236.62 | ₹4,520.48 |
+| Influencer | $114,075.58 | $290,087.22 | $176,011.64 | 154.29% | 3,014 | 0.964% | 17.79% | $37.85 | $96.25 |
+| Media | $69,042.71 | $84,512.53 | $15,469.82 | 22.41% | 1,566 | 0.039% | 15.43% | $44.09 | $53.97 |
+| Search | $47,529.52 | $50,890.03 | $3,360.51 | 7.07% | 828 | 0.457% | 11.65% | $57.40 | $61.46 |
+| Social | $189,526.03 | $163,606.97 | −$25,919.06 | −13.68% | 2,635 | 0.417% | 8.40% | $71.93 | $62.09 |
 
-Social is 45.11% of spend and the only losing category. That is a mix result, not a reason to leave social. Instagram as a platform returned 39.91% (gross profit ₹3,144,239.43). Facebook returned −34.13% (gross profit −₹3,470,199.91). Inside Facebook, retargeting returned 101.50%. Search looks almost flat at 7.07% only because Google wide (−33.67%) cancels most of Google hot (83.81%).
+Social is 45.11% of spend and the only losing category. That is a mix result, not a reason to leave social. Instagram as a platform returned 39.91% (gross profit $43,186.95). Facebook returned −34.13% (gross profit −$47,664.08). Inside Facebook, retargeting returned 101.50%. Search looks almost flat at 7.07% only because Google wide (−33.67%) cancels most of Google hot (83.81%).
 
 ## 3. Funnel
 
@@ -117,19 +129,19 @@ Click-to-lead is the stable step. It sits between 1.47% and 2.55% on every campa
 
 | Campaign | CTR | Click-to-lead | Lead-to-order | CPC | CPL |
 | --- | --- | --- | --- | --- | --- |
-| YouTube blogger | 1.030% | 2.21% | 19.27% | ₹9.02 | ₹408.61 |
-| Facebook retargeting | 3.067% | 1.69% | 21.34% | ₹8.90 | ₹526.61 |
-| Google hot | 1.945% | 2.04% | 15.33% | ₹13.33 | ₹654.66 |
-| Instagram tier 1 | 0.359% | 2.46% | 11.43% | ₹9.50 | ₹386.80 |
-| Instagram blogger | 0.879% | 2.34% | 15.70% | ₹14.16 | ₹606.07 |
-| Banner partner | 0.039% | 2.42% | 15.43% | ₹11.97 | ₹495.29 |
-| Facebook tier 1 | 0.381% | 1.47% | 13.41% | ₹10.69 | ₹725.54 |
-| Facebook tier 2 | 0.474% | 2.55% | 8.16% | ₹14.23 | ₹556.94 |
-| Google wide | 0.355% | 2.20% | 10.37% | ₹9.42 | ₹428.59 |
-| Instagram tier 2 | 0.370% | 2.03% | 3.02% | ₹2.09 | ₹102.77 |
-| Facebook lookalike | 0.945% | 1.59% | 15.40% | ₹22.01 | ₹1,383.94 |
+| YouTube blogger | 1.030% | 2.21% | 19.27% | $0.12 | $5.61 |
+| Facebook retargeting | 3.067% | 1.69% | 21.34% | $0.12 | $7.23 |
+| Google hot | 1.945% | 2.04% | 15.33% | $0.18 | $8.99 |
+| Instagram tier 1 | 0.359% | 2.46% | 11.43% | $0.13 | $5.31 |
+| Instagram blogger | 0.879% | 2.34% | 15.70% | $0.19 | $8.32 |
+| Banner partner | 0.039% | 2.42% | 15.43% | $0.16 | $6.80 |
+| Facebook tier 1 | 0.381% | 1.47% | 13.41% | $0.15 | $9.97 |
+| Facebook tier 2 | 0.474% | 2.55% | 8.16% | $0.20 | $7.65 |
+| Google wide | 0.355% | 2.20% | 10.37% | $0.13 | $5.89 |
+| Instagram tier 2 | 0.370% | 2.03% | 3.02% | $0.03 | $1.41 |
+| Facebook lookalike | 0.945% | 1.59% | 15.40% | $0.30 | $19.01 |
 
-Two different failure modes show up here. Instagram tier 2 is cheap (CPC ₹2.09, CPL ₹102.77) and then fails to close: 3.02% of leads become orders. Facebook lookalike is the opposite cost problem: CPC ₹22.01 and CPL ₹1,383.94, the worst prices in the account, and the orders that do arrive are worth ₹1,021.20.
+Two different failure modes show up here. Instagram tier 2 is cheap (CPC $0.03, CPL $1.41) and then fails to close: 3.02% of leads become orders. Facebook lookalike is the opposite cost problem: CPC $0.30 and CPL $19.01, the worst prices in the account, and the orders that do arrive are worth $14.03.
 
 ## 4. Unit economics
 
@@ -137,23 +149,23 @@ A campaign loses money on the next order while CAC stays above AOV. Profit per o
 
 | Campaign | CPC | CPL | CAC | AOV | Profit per order |
 | --- | --- | --- | --- | --- | --- |
-| YouTube blogger | ₹9.02 | ₹408.61 | ₹2,120.13 | ₹7,999.70 | ₹5,879.57 |
-| Facebook retargeting | ₹8.90 | ₹526.61 | ₹2,467.28 | ₹4,971.47 | ₹2,504.19 |
-| Google hot | ₹13.33 | ₹654.66 | ₹4,270.46 | ₹7,849.63 | ₹3,579.18 |
-| Instagram tier 1 | ₹9.50 | ₹386.80 | ₹3,384.27 | ₹5,994.89 | ₹2,610.62 |
-| Instagram blogger | ₹14.16 | ₹606.07 | ₹3,861.24 | ₹5,280.41 | ₹1,419.17 |
-| Banner partner | ₹11.97 | ₹495.29 | ₹3,209.88 | ₹3,929.09 | ₹719.21 |
-| Facebook tier 1 | ₹10.69 | ₹725.54 | ₹5,410.96 | ₹5,055.72 | −₹355.24 |
-| Facebook tier 2 | ₹14.23 | ₹556.94 | ₹6,822.49 | ₹5,033.88 | −₹1,788.61 |
-| Google wide | ₹9.42 | ₹428.59 | ₹4,132.36 | ₹2,740.98 | −₹1,391.38 |
-| Instagram tier 2 | ₹2.09 | ₹102.77 | ₹3,406.24 | ₹2,142.04 | −₹1,264.20 |
-| Facebook lookalike | ₹22.01 | ₹1,383.94 | ₹8,986.19 | ₹1,021.20 | −₹7,964.99 |
+| YouTube blogger | $0.12 | $5.61 | $29.12 | $109.88 | $80.76 |
+| Facebook retargeting | $0.12 | $7.23 | $33.89 | $68.28 | $34.40 |
+| Google hot | $0.18 | $8.99 | $58.66 | $107.82 | $49.16 |
+| Instagram tier 1 | $0.13 | $5.31 | $46.48 | $82.34 | $35.86 |
+| Instagram blogger | $0.19 | $8.32 | $53.04 | $72.53 | $19.49 |
+| Banner partner | $0.16 | $6.80 | $44.09 | $53.97 | $9.88 |
+| Facebook tier 1 | $0.15 | $9.97 | $74.32 | $69.44 | −$4.88 |
+| Facebook tier 2 | $0.20 | $7.65 | $93.71 | $69.14 | −$24.57 |
+| Google wide | $0.13 | $5.89 | $56.76 | $37.65 | −$19.11 |
+| Instagram tier 2 | $0.03 | $1.41 | $46.79 | $29.42 | −$17.36 |
+| Facebook lookalike | $0.30 | $19.01 | $123.43 | $14.03 | −$109.40 |
 
 ![Spend and revenue by campaign](images/spend_vs_revenue.png)
 
-Google wide is not an expensive-click problem (CPC ₹9.42, close to the portfolio ₹10.20). The orders are worth ₹2,740.98 against a CAC of ₹4,132.36. Google hot, on the same platform, has a higher CPC (₹13.33) and a much higher AOV (₹7,849.63). Moving search budget from wide match to high intent is a value fix, not a bid-down.
+Google wide is not an expensive-click problem (CPC $0.13, close to the portfolio $0.14). The orders are worth $37.65 against a CAC of $56.76. Google hot, on the same platform, has a higher CPC ($0.18) and a much higher AOV ($107.82). Moving search budget from wide match to high intent is a value fix, not a bid-down.
 
-Facebook tier 1 is the only loser close to the line: −₹355.24 per order, ROMI −6.57%. A small improvement in AOV or in click-to-lead (its 1.47% is the weakest click-to-lead in the account) would flip it. It is a test, not a scale-up, and not the first thing to delete.
+Facebook tier 1 is the only loser close to the line: −$4.88 per order, ROMI −6.57%. A small improvement in AOV or in click-to-lead (its 1.47% is the weakest click-to-lead in the account) would flip it. It is a test, not a scale-up, and not the first thing to delete.
 
 ## 5. Tier 1 vs tier 2 cities
 
@@ -163,17 +175,17 @@ Only four campaigns carry a city tier: Facebook and Instagram, tier 1 and tier 2
 
 | | Spend | Revenue | Gross profit | ROMI | Orders | Lead-to-order | CAC | AOV |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Tier 1 | ₹5,130,070.73 | ₹6,940,536.00 | ₹1,810,465.27 | 35.29% | 1,232 | 12.12% | ₹4,164.02 | ₹5,633.55 |
-| Tier 2 | ₹5,760,024.72 | ₹4,133,766.00 | −₹1,626,258.72 | −28.23% | 1,001 | 5.32% | ₹5,754.27 | ₹4,129.64 |
+| Tier 1 | $70,462.85 | $95,330.07 | $24,867.22 | 35.29% | 1,232 | 12.12% | $57.19 | $77.38 |
+| Tier 2 | $79,115.47 | $56,778.38 | −$22,337.09 | −28.23% | 1,001 | 5.32% | $79.04 | $56.72 |
 
 Tier 2 spent more and closed half as often. The platform split matters more than the tier average:
 
 | | ROMI | Lead-to-order | CAC | AOV | Gross profit |
 | --- | --- | --- | --- | --- | --- |
-| Instagram tier 1 | 77.14% | 11.43% | ₹3,384.27 | ₹5,994.89 | ₹1,978,846.75 |
-| Facebook tier 1 | −6.57% | 13.41% | ₹5,410.96 | ₹5,055.72 | −₹168,381.48 |
-| Facebook tier 2 | −26.22% | 8.16% | ₹6,822.49 | ₹5,033.88 | −₹1,230,564.97 |
-| Instagram tier 2 | −37.11% | 3.02% | ₹3,406.24 | ₹2,142.04 | −₹395,693.75 |
+| Instagram tier 1 | 77.14% | 11.43% | $46.48 | $82.34 | $27,179.98 |
+| Facebook tier 1 | −6.57% | 13.41% | $74.32 | $69.44 | −$2,312.76 |
+| Facebook tier 2 | −26.22% | 8.16% | $93.71 | $69.14 | −$16,902.13 |
+| Instagram tier 2 | −37.11% | 3.02% | $46.79 | $29.42 | −$5,434.96 |
 
 Instagram tier 1 is the city campaign worth keeping. Both Facebook city tiers lose money. Instagram tier 2's traffic is cheap and the leads do not become orders.
 
@@ -193,11 +205,11 @@ Targeting is read from the campaign name. It is not a field in the extract.
 
 | Targeting | Spend | Revenue | Gross profit | ROMI | CTR | Lead-to-order | CAC | AOV |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Influencer | ₹8,305,304.08 | ₹21,119,887.00 | ₹12,814,582.92 | 154.29% | 0.964% | 17.79% | ₹2,755.58 | ₹7,007.26 |
-| Retargeting | ₹266,466.22 | ₹536,919.00 | ₹270,452.78 | 101.50% | 3.067% | 21.34% | ₹2,467.28 | ₹4,971.47 |
-| High intent | ₹1,199,998.76 | ₹2,205,747.00 | ₹1,005,748.24 | 83.81% | 1.945% | 15.33% | ₹4,270.46 | ₹7,849.63 |
-| Broad | ₹18,177,171.52 | ₹18,726,580.00 | ₹549,408.48 | 3.02% | 0.136% | 9.79% | ₹4,182.51 | ₹4,308.92 |
-| Lookalike | ₹2,641,939.24 | ₹300,233.00 | −₹2,341,706.24 | −88.64% | 0.945% | 15.40% | ₹8,986.19 | ₹1,021.20 |
+| Influencer | $114,075.58 | $290,087.22 | $176,011.64 | 154.29% | 0.964% | 17.79% | $37.85 | $96.25 |
+| Retargeting | $3,660.00 | $7,374.73 | $3,714.73 | 101.50% | 3.067% | 21.34% | $33.89 | $68.28 |
+| High intent | $16,482.30 | $30,296.51 | $13,814.21 | 83.81% | 1.945% | 15.33% | $58.66 | $107.82 |
+| Broad | $249,668.25 | $257,214.50 | $7,546.25 | 3.02% | 0.136% | 9.79% | $57.45 | $59.18 |
+| Lookalike | $36,287.71 | $4,123.79 | −$32,163.92 | −88.64% | 0.945% | 15.40% | $123.43 | $14.03 |
 
 Read as a three-way comparison: retargeting returned 101.50%, broad returned 3.02%, lookalike returned −88.64%.
 
@@ -205,18 +217,18 @@ Retargeting is 0.87% of spend. Its CTR is 3.067% against a portfolio CTR of 0.19
 
 Broad at 3.02% is a blend, not a verdict. It contains Instagram tier 1 and the banner, which make money, and the city and wide-match lines that do not. The pause list below is at campaign level on purpose.
 
-Lookalike spent ₹2,641,939.24 to produce ₹300,233.00. Profit per order was −₹7,964.99. Lead-to-order was an ordinary 15.40%. The audience is expensive, and the buyers are worth ₹1,021.20 against a portfolio AOV of ₹5,332.51.
+Lookalike spent $36,287.71 to produce $4,123.79. Profit per order was −$109.40. Lead-to-order was an ordinary 15.40%. The audience is expensive, and the buyers are worth $14.03 against a portfolio AOV of $73.24.
 
 ## 7. Time
 
 ![Daily trend](images/daily_trend.png)
 
-ROMI was positive on all 28 days. The best day was 26 February, 94.59% ROMI, on only ₹122,692.89 of spend. The worst day was 10 February, 11.15% ROMI, on ₹729,951.80. The peak was 20 February: spend ₹3,499,171.70, revenue ₹5,261,521.00, ROMI 50.36%, 1,023 orders. After that peak the account was cut hard. Daily orders move almost in lockstep with daily spend (correlation 0.99). Daily ROMI moves only mildly the other way (correlation −0.22).
+ROMI was positive on all 28 days. The best day was 26 February, 94.59% ROMI, on only $1,685.22 of spend. The worst day was 10 February, 11.15% ROMI, on $10,026.09. The peak was 20 February: spend $48,062.04, revenue $72,268.37, ROMI 50.36%, 1,023 orders. After that peak the account was cut hard. Daily orders move almost in lockstep with daily spend (correlation 0.99). Daily ROMI moves only mildly the other way (correlation −0.22).
 
 | Half | Spend | Revenue | Gross profit | ROMI | Orders |
 | --- | --- | --- | --- | --- | --- |
-| 1–14 February | ₹11,950,260.55 | ₹17,050,290.00 | ₹5,100,029.45 | 42.68% | 3,206 |
-| 15–28 February | ₹18,640,619.27 | ₹25,839,076.00 | ₹7,198,456.73 | 38.62% | 4,837 |
+| 1–14 February | $164,139.99 | $234,190.23 | $70,050.24 | 42.68% | 3,206 |
+| 15–28 February | $256,033.85 | $354,906.52 | $98,872.67 | 38.62% | 4,837 |
 
 The second half spent more and gave a bit of efficiency back. That is consistent with a mild diminishing return, not with a broken second half.
 
@@ -226,22 +238,22 @@ February 2021 started on a Monday, so each weekday occurs four times. The totals
 
 | | Days | Spend | Spend per day | Gross profit | Gross profit per day | ROMI | Orders |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Weekday | 20 | ₹22,389,037.98 | ₹1,119,451.90 | ₹8,832,095.02 | ₹441,604.75 | 39.45% | 5,763 |
-| Weekend | 8 | ₹8,201,841.84 | ₹1,025,230.23 | ₹3,466,391.16 | ₹433,298.90 | 42.26% | 2,280 |
+| Weekday | 20 | $307,519.39 | $15,375.97 | $121,311.07 | $6,065.55 | 39.45% | 5,763 |
+| Weekend | 8 | $112,654.45 | $14,081.81 | $47,611.84 | $5,951.48 | 42.26% | 2,280 |
 
-Weekend ROMI is 42.26% against a weekday 39.45%. Gross profit per day is ₹433,298.90 against ₹441,604.75. There is no case for moving the budget onto the weekend as a block.
+Weekend ROMI is 42.26% against a weekday 39.45%. Gross profit per day is $5,951.48 against $6,065.55. There is no case for moving the budget onto the weekend as a block.
 
 | Weekday | Spend | Gross profit | ROMI | Orders |
 | --- | --- | --- | --- | --- |
-| Monday | ₹2,873,939.11 | ₹1,305,717.89 | 45.43% | 765 |
-| Tuesday | ₹3,656,123.32 | ₹881,411.68 | 24.11% | 861 |
-| Wednesday | ₹5,293,289.31 | ₹1,680,505.69 | 31.75% | 1,349 |
-| Thursday | ₹4,312,783.47 | ₹1,643,187.53 | 38.10% | 1,114 |
-| Friday | ₹6,252,902.77 | ₹3,321,272.23 | 53.12% | 1,674 |
-| Saturday | ₹5,659,464.57 | ₹2,863,937.43 | 50.60% | 1,629 |
-| Sunday | ₹2,542,377.27 | ₹602,453.73 | 23.70% | 651 |
+| Monday | $39,474.30 | $17,934.42 | 45.43% | 765 |
+| Tuesday | $50,217.83 | $12,106.39 | 24.11% | 861 |
+| Wednesday | $72,704.75 | $23,082.15 | 31.75% | 1,349 |
+| Thursday | $59,237.24 | $22,569.55 | 38.10% | 1,114 |
+| Friday | $85,885.27 | $45,618.56 | 53.12% | 1,674 |
+| Saturday | $77,734.24 | $39,336.94 | 50.60% | 1,629 |
+| Sunday | $34,920.21 | $8,274.90 | 23.70% | 651 |
 
-Friday and Saturday are the efficient, high-volume days. Sunday is not Saturday: it has the lowest spend (₹2,542,377.27) and a 23.70% ROMI, close to Tuesday's 24.11% on ₹3,656,123.32 of spend.
+Friday and Saturday are the efficient, high-volume days. Sunday is not Saturday: it has the lowest spend ($34,920.21) and a 23.70% ROMI, close to Tuesday's 24.11% on $50,217.83 of spend.
 
 ## 8. Budget recommendation
 
@@ -249,39 +261,39 @@ Pause four campaigns. Each has CAC above AOV by a wide margin, so another order 
 
 | Pause | Spend released | Gross profit removed | Why |
 | --- | --- | --- | --- |
-| Facebook lookalike | ₹2,641,939.24 | −₹2,341,706.24 | CAC ₹8,986.19 vs AOV ₹1,021.20. Worst CPC and CPL in the account. |
-| Facebook tier 2 | ₹4,693,870.97 | −₹1,230,564.97 | 15.34% of the budget. CAC ₹6,822.49 vs AOV ₹5,033.88. |
-| Google wide | ₹2,260,401.31 | −₹761,083.31 | Same channel as Google hot, much lower AOV (₹2,740.98 vs ₹7,849.63). |
-| Instagram tier 2 | ₹1,066,153.75 | −₹395,693.75 | Lead-to-order 3.02%. Cheap clicks, orders worth ₹2,142.04. |
+| Facebook lookalike | $36,287.71 | −$32,163.92 | CAC $123.43 vs AOV $14.03. Worst CPC and CPL in the account. |
+| Facebook tier 2 | $64,471.55 | −$16,902.13 | 15.34% of the budget. CAC $93.71 vs AOV $69.14. |
+| Google wide | $31,047.22 | −$10,453.70 | Same channel as Google hot, much lower AOV ($37.65 vs $107.82). |
+| Instagram tier 2 | $14,643.92 | −$5,434.96 | Lead-to-order 3.02%. Cheap clicks, orders worth $29.42. |
 
-Together that is ₹10,662,365.27 of spend, 34.85% of the month, ₹5,933,317.00 of revenue, and 1,842 orders. Those orders were unprofitable. Dropping the four lines and leaving everything else exactly as it ran:
+Together that is $146,450.40 of spend, 34.85% of the month, $81,495.69 of revenue, and 1,842 orders. Those orders were unprofitable. Dropping the four lines and leaving everything else exactly as it ran:
 
 | | Spend | Revenue | Gross profit | ROMI | Orders |
 | --- | --- | --- | --- | --- | --- |
-| February, as run | ₹30,590,879.82 | ₹42,889,366.00 | ₹12,298,486.18 | 40.20% | 8,043 |
-| After the four pauses | ₹19,928,514.55 | ₹36,956,049.00 | ₹17,027,534.45 | 85.44% | 6,201 |
+| February, as run | $420,173.84 | $589,096.75 | $168,922.91 | 40.20% | 8,043 |
+| After the four pauses | $273,723.44 | $507,601.06 | $233,877.62 | 85.44% | 6,201 |
 
-Gross profit rises by ₹4,729,048.27, which is exactly the loss those four lines posted. No scale-up is assumed. This is the recommendation that the observed rows support on their own.
+Gross profit rises by $64,954.71, which is exactly the loss those four lines posted. No scale-up is assumed. This is the recommendation that the observed rows support on their own.
 
-What to do with the freed ₹10,662,365.27 is a test design, not a forecast. The weights below are a planning choice. They are not the output of an optimiser. YouTube already works at ₹4,057,936.51 and should take the largest share, not the whole budget, because influencer inventory does not scale like an auction. Retargeting is set at ₹1,066,236.53, four times its February spend of ₹266,466.22, because the month produced only 976,685 retargeting impressions. Google hot receives the budget Google wide was wasting, inside the same channel. Instagram tier 1 is the scalable paid-social cell.
+What to do with the freed $146,450.40 is a test design, not a forecast. The weights below are a planning choice. They are not the output of an optimiser. YouTube already works at $55,736.85 and should take the largest share, not the whole budget, because influencer inventory does not scale like an auction. Retargeting is set at $14,645.04, four times its February spend of $3,660.00, because the month produced only 976,685 retargeting impressions. Google hot receives the budget Google wide was wasting, inside the same channel. Instagram tier 1 is the scalable paid-social cell.
 
 | Destination | Share of freed spend | Added spend | Observed ROMI | Incremental gross profit if that ROMI holds | Projected extra orders |
 | --- | --- | --- | --- | --- | --- |
-| YouTube blogger | 40% | ₹4,264,946.11 | 277.32% | ₹11,827,576.89 | 2,011.64 |
-| Instagram tier 1 | 30% | ₹3,198,709.58 | 77.14% | ₹2,467,474.44 | 945.17 |
-| Google hot | 20% | ₹2,132,473.05 | 83.81% | ₹1,787,277.69 | 499.35 |
-| Facebook retargeting | 10% | ₹1,066,236.53 | 101.50% | ₹1,082,188.33 | 432.15 |
-| Total | 100% | ₹10,662,365.27 | | ₹17,164,517.35 | |
+| YouTube blogger | 40% | $58,580.16 | 277.32% | $162,454.79 | 2,011.64 |
+| Instagram tier 1 | 30% | $43,935.12 | 77.14% | $33,891.42 | 945.17 |
+| Google hot | 20% | $29,290.08 | 83.81% | $24,548.72 | 499.35 |
+| Facebook retargeting | 10% | $14,645.04 | 101.50% | $14,864.04 | 432.15 |
+| Total | 100% | $146,450.40 | | $235,758.97 | |
 
-If those rates survived the extra spend, the full book (same ₹30,590,879.82 of spend, losers replaced by the four destinations) would show gross profit of ₹34,192,051.80 and ROMI of 111.77%. Treat that as a ceiling. The daily correlation between spend and ROMI is −0.22, so a larger budget should be expected to give something back. The pause case, at 85.44% ROMI and ₹17,027,534.45 of gross profit, does not depend on that assumption.
+If those rates survived the extra spend, the full book (same $420,173.84 of spend, losers replaced by the four destinations) would show gross profit of $469,636.59 and ROMI of 111.77%. Treat that as a ceiling. The daily correlation between spend and ROMI is −0.22, so a larger budget should be expected to give something back. The pause case, at 85.44% ROMI and $233,877.62 of gross profit, does not depend on that assumption.
 
 Hold, do not scale:
 
-- **Facebook tier 1.** Spend stays at ₹2,564,793.48. It loses ₹355.24 per order. Give it a creative and landing test with a stop if ROMI is still negative. Do not add budget first.
-- **Banner partner.** ROMI 22.41% is real, and so is a 0.039% CTR and the thinnest profit per order among the winners (₹719.21). It already takes 16.43% of spend. Refresh the creative before adding impressions.
-- **Instagram blogger.** ROMI 36.75% is healthy and already a large line (₹4,247,367.57). Keep it. The next incremental rupee is better tested on YouTube, which returned 277.32% on a similar influencer job.
+- **Facebook tier 1.** Spend stays at $35,228.10. It loses $4.88 per order. Give it a creative and landing test with a stop if ROMI is still negative. Do not add budget first.
+- **Banner partner.** ROMI 22.41% is real, and so is a 0.039% CTR and the thinnest profit per order among the winners ($9.88). It already takes 16.43% of spend. Refresh the creative before adding impressions.
+- **Instagram blogger.** ROMI 36.75% is healthy and already a large line ($58,338.73). Keep it. The next incremental dollar is better tested on YouTube, which returned 277.32% on a similar influencer job.
 
-Two operating notes from the calendar. Do not move budget onto "the weekend": Sunday's 23.70% ROMI undoes the story, and profit per day is flat. Do smooth the flight. The account scaled into ₹3,499,171.70 on 20 February, still at 50.36% ROMI, and then went quiet. Retargeting and Google hot should not be switched off in that cut.
+Two operating notes from the calendar. Do not move budget onto "the weekend": Sunday's 23.70% ROMI undoes the story, and profit per day is flat. Do smooth the flight. The account scaled into $48,062.04 on 20 February, still at 50.36% ROMI, and then went quiet. Retargeting and Google hot should not be switched off in that cut.
 
 ## How to run
 

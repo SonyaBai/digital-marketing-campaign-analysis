@@ -22,12 +22,12 @@ SELECT
         ELSE 'scale'
     END AS action,
     campaign_name,
-    ROUND(SUM(mark_spent), 2) AS spend_inr,
-    ROUND(SUM(revenue), 2) AS revenue_inr,
-    ROUND(SUM(revenue) - SUM(mark_spent), 2) AS gross_profit_inr,
+    ROUND(SUM(mark_spent), 2) AS spend_usd,
+    ROUND(SUM(revenue), 2) AS revenue_usd,
+    ROUND(SUM(revenue) - SUM(mark_spent), 2) AS gross_profit_usd,
     ROUND(100.0 * (SUM(revenue) - SUM(mark_spent)) / SUM(mark_spent), 2) AS romi_pct,
-    ROUND(SUM(mark_spent) / SUM(orders), 2) AS cac_inr,
-    ROUND(SUM(revenue) / SUM(orders), 2) AS aov_inr,
+    ROUND(SUM(mark_spent) / SUM(orders), 2) AS cac_usd,
+    ROUND(SUM(revenue) / SUM(orders), 2) AS aov_usd,
     SUM(orders) AS orders
 FROM campaign_daily
 GROUP BY campaign_name
@@ -35,9 +35,9 @@ ORDER BY action, romi_pct DESC;
 
 SELECT
     'observed' AS scenario,
-    ROUND(SUM(mark_spent), 2) AS spend_inr,
-    ROUND(SUM(revenue), 2) AS revenue_inr,
-    ROUND(SUM(revenue) - SUM(mark_spent), 2) AS gross_profit_inr,
+    ROUND(SUM(mark_spent), 2) AS spend_usd,
+    ROUND(SUM(revenue), 2) AS revenue_usd,
+    ROUND(SUM(revenue) - SUM(mark_spent), 2) AS gross_profit_usd,
     ROUND(100.0 * (SUM(revenue) - SUM(mark_spent)) / SUM(mark_spent), 2) AS romi_pct,
     SUM(orders) AS orders
 FROM campaign_daily
@@ -46,9 +46,9 @@ UNION ALL
 
 SELECT
     'pause_four_lossmakers' AS scenario,
-    ROUND(SUM(mark_spent), 2) AS spend_inr,
-    ROUND(SUM(revenue), 2) AS revenue_inr,
-    ROUND(SUM(revenue) - SUM(mark_spent), 2) AS gross_profit_inr,
+    ROUND(SUM(mark_spent), 2) AS spend_usd,
+    ROUND(SUM(revenue), 2) AS revenue_usd,
+    ROUND(SUM(revenue) - SUM(mark_spent), 2) AS gross_profit_usd,
     ROUND(100.0 * (SUM(revenue) - SUM(mark_spent)) / SUM(mark_spent), 2) AS romi_pct,
     SUM(orders) AS orders
 FROM campaign_daily
@@ -76,12 +76,12 @@ weights AS (
 SELECT
     w.campaign_name,
     w.weight,
-    ROUND(f.freed_spend * w.weight, 2) AS added_spend_inr,
+    ROUND(f.freed_spend * w.weight, 2) AS added_spend_usd,
     ROUND(100.0 * (c.revenue - c.spend) / c.spend, 2) AS observed_romi_pct,
     ROUND(
         ROUND(f.freed_spend * w.weight, 2) * (c.revenue - c.spend) / c.spend,
         2
-    ) AS incremental_gross_profit_inr
+    ) AS incremental_gross_profit_usd
 FROM weights AS w
 JOIN campaign AS c ON c.campaign_name = w.campaign_name
 CROSS JOIN freed AS f

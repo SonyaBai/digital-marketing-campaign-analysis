@@ -1,8 +1,9 @@
 """KPI tables. Every rate is a ratio of sums, never an average of daily rates.
 
-Money stays in integer paise until a formatter prints it. Gross profit is
-revenue minus media spend. The file has no cost of goods, so this is not
-accounting gross profit.
+Money stays in integer US cents until a formatter prints it. Cents are the
+rupee amounts converted at the fixed February 2021 rate and rounded per
+campaign-day. Gross profit is revenue minus media spend. The file has no
+cost of goods, so this is not accounting gross profit.
 """
 
 from __future__ import annotations
@@ -25,9 +26,9 @@ def _kpi(part: pd.DataFrame) -> dict[str, int | float]:
     clicks = int(part["clicks"].sum())
     leads = int(part["leads"].sum())
     orders = int(part["orders"].sum())
-    spend_paise = int(part["mark_spent_paise"].sum())
-    revenue_paise = int(part["revenue_paise"].sum())
-    gross_profit_paise = revenue_paise - spend_paise
+    spend_cents = int(part["spend_cents"].sum())
+    revenue_cents = int(part["revenue_cents"].sum())
+    gross_profit_cents = revenue_cents - spend_cents
     days = int(part["c_date"].nunique())
     return {
         "impressions": impressions,
@@ -35,14 +36,14 @@ def _kpi(part: pd.DataFrame) -> dict[str, int | float]:
         "leads": leads,
         "orders": orders,
         "days": days,
-        "spend_paise": spend_paise,
-        "revenue_paise": revenue_paise,
-        "gross_profit_paise": gross_profit_paise,
-        "romi": gross_profit_paise / spend_paise,
+        "spend_cents": spend_cents,
+        "revenue_cents": revenue_cents,
+        "gross_profit_cents": gross_profit_cents,
+        "romi": gross_profit_cents / spend_cents,
         "ctr": clicks / impressions,
         "conv1": leads / clicks,
         "conv2": (orders / leads) if leads else float("nan"),
-        "cpm": (spend_paise / 100) / impressions * 1000,
+        "cpm": (spend_cents / 100) / impressions * 1000,
     }
 
 
@@ -84,40 +85,40 @@ def build_reallocation(campaign: pd.DataFrame) -> dict[str, object]:
     if named != set(campaign.index):
         raise ValueError(f"Campaign actions do not cover the book: {named ^ set(campaign.index)}")
 
-    freed_paise = sum(int(campaign.loc[name, "spend_paise"]) for name in PAUSE_CAMPAIGNS)
-    remaining = freed_paise
+    freed_cents = sum(int(campaign.loc[name, "spend_cents"]) for name in PAUSE_CAMPAIGNS)
+    remaining = freed_cents
     allocations: list[dict[str, object]] = []
     for position, (name, weight) in enumerate(weights):
         if position == len(weights) - 1:
             added = remaining
         else:
-            added = int((Decimal(freed_paise) * weight).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+            added = int((Decimal(freed_cents) * weight).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
             remaining -= added
-        spend_paise = int(campaign.loc[name, "spend_paise"])
-        profit_paise = int(campaign.loc[name, "gross_profit_paise"])
+        spend_cents = int(campaign.loc[name, "spend_cents"])
+        profit_cents = int(campaign.loc[name, "gross_profit_cents"])
         orders = int(campaign.loc[name, "orders"])
-        romi = Decimal(profit_paise) / Decimal(spend_paise)
+        romi = Decimal(profit_cents) / Decimal(spend_cents)
         incremental = (Decimal(added) / Decimal(100)) * romi
-        projected_orders = (Decimal(added) / Decimal(spend_paise)) * Decimal(orders)
+        projected_orders = (Decimal(added) / Decimal(spend_cents)) * Decimal(orders)
         allocations.append(
             {
                 "campaign": name,
                 "weight": weight,
-                "added_spend_paise": added,
+                "added_spend_cents": added,
                 "observed_romi": romi,
                 "incremental_gross_profit": incremental.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
                 "projected_orders": projected_orders.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
             }
         )
-    if sum(int(row["added_spend_paise"]) for row in allocations) != freed_paise:
-        raise ValueError("Allocated paise do not equal the freed budget.")
+    if sum(int(row["added_spend_cents"]) for row in allocations) != freed_cents:
+        raise ValueError("Allocated cents do not equal the freed budget.")
     incremental_total = sum((row["incremental_gross_profit"] for row in allocations), Decimal("0"))
 
-    paused_revenue = sum(int(campaign.loc[name, "revenue_paise"]) for name in PAUSE_CAMPAIGNS)
+    paused_revenue = sum(int(campaign.loc[name, "revenue_cents"]) for name in PAUSE_CAMPAIGNS)
     paused_orders = sum(int(campaign.loc[name, "orders"]) for name in PAUSE_CAMPAIGNS)
     kept = campaign.drop(index=list(PAUSE_CAMPAIGNS))
-    kept_spend = int(kept["spend_paise"].sum())
-    kept_revenue = int(kept["revenue_paise"].sum())
+    kept_spend = int(kept["spend_cents"].sum())
+    kept_revenue = int(kept["revenue_cents"].sum())
     kept_orders = int(kept["orders"].sum())
     kept_profit = kept_revenue - kept_spend
 
@@ -135,13 +136,13 @@ def build_reallocation(campaign: pd.DataFrame) -> dict[str, object]:
     return {
         "actions": actions,
         "allocations": allocations,
-        "freed_spend_paise": freed_paise,
-        "forgone_revenue_paise": paused_revenue,
+        "freed_spend_cents": freed_cents,
+        "forgone_revenue_cents": paused_revenue,
         "forgone_orders": paused_orders,
-        "forgone_profit_paise": paused_revenue - freed_paise,
-        "pause_only_spend_paise": kept_spend,
-        "pause_only_revenue_paise": kept_revenue,
-        "pause_only_profit_paise": kept_profit,
+        "forgone_profit_cents": paused_revenue - freed_cents,
+        "pause_only_spend_cents": kept_spend,
+        "pause_only_revenue_cents": kept_revenue,
+        "pause_only_profit_cents": kept_profit,
         "pause_only_orders": kept_orders,
         "incremental_gross_profit": incremental_total.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
     }
@@ -174,17 +175,17 @@ def build_report(clean: pd.DataFrame) -> dict[str, object]:
     ex_banner = aggregate(clean.loc[clean["campaign_name"] != "banner_partner"])
     overall = aggregate(clean)
 
-    corr_spend_romi = float(daily["spend_paise"].corr(pd.Series(daily["romi"], index=daily.index)))
-    corr_spend_orders = float(daily["spend_paise"].corr(daily["orders"]))
+    corr_spend_romi = float(daily["spend_cents"].corr(pd.Series(daily["romi"], index=daily.index)))
+    corr_spend_orders = float(daily["spend_cents"].corr(daily["orders"]))
 
     banner_impressions = int(clean.loc[clean["campaign_name"] == "banner_partner", "impressions"].sum())
     total_impressions = int(clean["impressions"].sum())
-    youtube_profit = int(campaign.loc["youtube_blogger", "gross_profit_paise"])
-    total_profit = int(overall.iloc[0]["gross_profit_paise"])
+    youtube_profit = int(campaign.loc["youtube_blogger", "gross_profit_cents"])
+    total_profit = int(overall.iloc[0]["gross_profit_cents"])
 
     best_day = daily["romi"].idxmax()
     worst_day = daily["romi"].idxmin()
-    peak_day = daily["spend_paise"].idxmax()
+    peak_day = daily["spend_cents"].idxmax()
 
     return {
         "overall": overall,

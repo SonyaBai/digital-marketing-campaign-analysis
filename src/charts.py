@@ -15,7 +15,8 @@ import seaborn as sns
 from matplotlib.patches import Patch
 
 from src.constants import CAMPAIGN_LABELS, TARGETING_LABELS, WEEKDAY_ORDER
-from src.formatters import inr_millions, millions_float, pretty_label, rate_pct
+from src.constants import INR_PER_USD
+from src.formatters import pretty_label, rate_pct, thousands_float, usd_thousands
 
 INK = "#1C2B33"
 TEAL = "#1F7A6B"
@@ -29,7 +30,7 @@ SAND = "#F3E6C8"
 GRID = "#E6E0D6"
 MUTED = "#C8C2B8"
 
-SOURCE = "February 2021  ·  INR  ·  11 campaigns  ·  308 campaign-days"
+SOURCE = f"February 2021  ·  USD at {INR_PER_USD} INR per USD  ·  11 campaigns  ·  308 campaign-days"
 
 
 def _apply_style() -> None:
@@ -67,7 +68,7 @@ def _finish(fig: plt.Figure, path: Path) -> None:
 
 
 def _romi_pct(row: pd.Series) -> str:
-    return rate_pct(int(row.gross_profit_paise), int(row.spend_paise), 2)
+    return rate_pct(int(row.gross_profit_cents), int(row.spend_cents), 2)
 
 
 def plot_romi(report: dict) -> plt.Figure:
@@ -93,7 +94,7 @@ def plot_romi(report: dict) -> plt.Figure:
     span = float(values.max() - values.min())
     pad = span * 0.025
     for ypos, value, row in zip(y, values, campaign.itertuples()):
-        label = rate_pct(int(row.gross_profit_paise), int(row.spend_paise), 2)
+        label = rate_pct(int(row.gross_profit_cents), int(row.spend_cents), 2)
         if value >= 0:
             ax.text(value + pad, ypos, label, va="center", ha="left", fontsize=8.5, color=INK)
         else:
@@ -197,11 +198,11 @@ def plot_funnel(report: dict) -> plt.Figure:
 
 
 def plot_spend_revenue(report: dict) -> plt.Figure:
-    campaign = report["campaign"].sort_values("spend_paise", ascending=True)
+    campaign = report["campaign"].sort_values("spend_cents", ascending=True)
     labels = [CAMPAIGN_LABELS[name] for name in campaign.index]
     y = np.arange(len(labels))
-    spend = campaign["spend_paise"].map(millions_float).to_numpy()
-    revenue = campaign["revenue_paise"].map(millions_float).to_numpy()
+    spend = campaign["spend_cents"].map(thousands_float).to_numpy()
+    revenue = campaign["revenue_cents"].map(thousands_float).to_numpy()
     height = 0.38
 
     fig, ax = plt.subplots(figsize=(11.2, 6.8), constrained_layout=True)
@@ -209,11 +210,13 @@ def plot_spend_revenue(report: dict) -> plt.Figure:
     ax.barh(y - height / 2, revenue, height=height, color=TEAL, label="Revenue", zorder=2)
     ax.set_yticks(y)
     ax.set_yticklabels(labels)
-    ax.set_xlabel("INR millions")
-    ax.set_xlim(0, max(revenue.max(), spend.max()) * 1.18)
+    ax.set_xlabel("USD thousands")
+    span = max(float(revenue.max()), float(spend.max()))
+    pad = span * 0.012
+    ax.set_xlim(0, span * 1.22)
     for ypos, spent, earned in zip(y, spend, revenue):
-        ax.text(spent + 0.15, ypos + height / 2, f"{spent:.2f}", va="center", ha="left", fontsize=7.5, color=SLATE)
-        ax.text(earned + 0.15, ypos - height / 2, f"{earned:.2f}", va="center", ha="left", fontsize=7.5, color=TEAL)
+        ax.text(spent + pad, ypos + height / 2, f"{spent:.2f}", va="center", ha="left", fontsize=7.5, color=SLATE)
+        ax.text(earned + pad, ypos - height / 2, f"{earned:.2f}", va="center", ha="left", fontsize=7.5, color=TEAL)
     ax.legend(loc="lower right")
     ax.set_title(
         "Where the teal bar is shorter than the gray bar, the campaign lost money.",
@@ -227,10 +230,10 @@ def plot_spend_revenue(report: dict) -> plt.Figure:
 
 def plot_tier(report: dict) -> plt.Figure:
     tier = report["tier"].reset_index().rename(columns={"city_tier": "tier"})
-    tier_long = tier.melt(id_vars="tier", value_vars=["spend_paise", "revenue_paise"], var_name="metric", value_name="paise")
-    tier_long["INR millions"] = tier_long["paise"].map(millions_float)
+    tier_long = tier.melt(id_vars="tier", value_vars=["spend_cents", "revenue_cents"], var_name="metric", value_name="cents")
+    tier_long["USD thousands"] = tier_long["cents"].map(thousands_float)
     tier_long["tier"] = tier_long["tier"].map(pretty_label)
-    tier_long["metric"] = tier_long["metric"].map({"spend_paise": "Spend", "revenue_paise": "Revenue"})
+    tier_long["metric"] = tier_long["metric"].map({"spend_cents": "Spend", "revenue_cents": "Revenue"})
 
     cells = report["tier_platform"].reset_index()
     tier_name = {"tier1": "tier 1", "tier2": "tier 2"}
@@ -243,7 +246,7 @@ def plot_tier(report: dict) -> plt.Figure:
     sns.barplot(
         data=tier_long,
         x="tier",
-        y="INR millions",
+        y="USD thousands",
         hue="metric",
         order=["Tier 1", "Tier 2"],
         hue_order=["Spend", "Revenue"],
@@ -252,11 +255,11 @@ def plot_tier(report: dict) -> plt.Figure:
         ax=ax,
     )
     ax.set_xlabel("")
-    ax.set_ylabel("INR millions")
+    ax.set_ylabel("USD thousands")
     ax.legend(title="", loc="upper right")
     for container in ax.containers:
         ax.bar_label(container, fmt="%.2f", fontsize=8.5, padding=2, color=INK)
-    ax.set_ylim(0, float(tier_long["INR millions"].max()) * 1.2)
+    ax.set_ylim(0, float(tier_long["USD thousands"].max()) * 1.2)
     tier1 = report["tier"].loc["tier1"]
     tier2 = report["tier"].loc["tier2"]
     ax.set_title(
@@ -272,7 +275,7 @@ def plot_tier(report: dict) -> plt.Figure:
     ax.axvline(0, color=INK, linewidth=0.8)
     ax.invert_yaxis()
     for ypos, row in enumerate(cells.itertuples()):
-        label = rate_pct(int(row.gross_profit_paise), int(row.spend_paise), 2)
+        label = rate_pct(int(row.gross_profit_cents), int(row.spend_cents), 2)
         offset = 0.04 if row.romi >= 0 else -0.04
         align = "left" if row.romi >= 0 else "right"
         ax.text(row.romi + offset, ypos, label, va="center", ha=align, fontsize=9, color=INK)
@@ -304,8 +307,8 @@ def plot_targeting(report: dict) -> plt.Figure:
     ax.invert_yaxis()
     for ypos, name, row in zip(y, frame.index, frame.itertuples()):
         label = (
-            f"{rate_pct(int(row.gross_profit_paise), int(row.spend_paise), 2)}"
-            f"   ·   {inr_millions(int(row.spend_paise))} spend"
+            f"{rate_pct(int(row.gross_profit_cents), int(row.spend_cents), 2)}"
+            f"   ·   {usd_thousands(int(row.spend_cents))} spend"
         )
         # Negative bars would push a left-hand label into the category names.
         # Park that label in the empty space to the right of zero instead.
@@ -338,8 +341,8 @@ def plot_targeting(report: dict) -> plt.Figure:
 def plot_daily(report: dict) -> plt.Figure:
     daily = report["daily"]
     dates = pd.to_datetime(daily.index)
-    spend = daily["spend_paise"].map(millions_float)
-    revenue = daily["revenue_paise"].map(millions_float)
+    spend = daily["spend_cents"].map(thousands_float)
+    revenue = daily["revenue_cents"].map(thousands_float)
     romi = daily["romi"] * 100
 
     fig, ax = plt.subplots(figsize=(12.4, 6.4), constrained_layout=True)
@@ -357,7 +360,7 @@ def plot_daily(report: dict) -> plt.Figure:
     ax.fill_between(dates, spend, revenue, color=TEAL, alpha=0.16, zorder=1, label="Gross profit")
     ax.plot(dates, spend, color=SPEND, linewidth=2.0, marker="o", markersize=3.5, label="Spend", zorder=3)
     ax.plot(dates, revenue, color=TEAL, linewidth=2.0, marker="o", markersize=3.5, label="Revenue", zorder=3)
-    ax.set_ylabel("INR millions")
+    ax.set_ylabel("USD thousands")
     ax.set_xlabel("")
 
     twin = ax.twinx()
@@ -394,7 +397,7 @@ def plot_weekday(report: dict) -> plt.Figure:
     weekend = report["weekend"]
     colors = [GOLD if day in {"Saturday", "Sunday"} else NAVY for day in WEEKDAY_ORDER]
     romi = weekday["romi"].to_numpy() * 100
-    profit = weekday["gross_profit_paise"].map(millions_float).to_numpy()
+    profit = weekday["gross_profit_cents"].map(thousands_float).to_numpy()
 
     fig, axes = plt.subplots(1, 2, figsize=(12.4, 6.0), constrained_layout=True)
     x = np.arange(len(WEEKDAY_ORDER))
@@ -408,7 +411,7 @@ def plot_weekday(report: dict) -> plt.Figure:
     ax.set_ylabel("ROMI")
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda v, _pos: f"{v:.0f}%"))
     for xpos, value, row in zip(x, romi, weekday.itertuples()):
-        ax.text(xpos, value + 1.2, rate_pct(int(row.gross_profit_paise), int(row.spend_paise), 2), ha="center", va="bottom", fontsize=8, color=INK)
+        ax.text(xpos, value + 1.2, rate_pct(int(row.gross_profit_cents), int(row.spend_cents), 2), ha="center", va="bottom", fontsize=8, color=INK)
     ax.set_ylim(0, max(romi) * 1.22)
     ax.legend(loc="upper left")
     wd = _romi_pct(weekend.loc["Weekday"])
@@ -419,10 +422,11 @@ def plot_weekday(report: dict) -> plt.Figure:
     ax.bar(x, profit, color=colors, width=0.72, zorder=2)
     ax.set_xticks(x)
     ax.set_xticklabels([day[:3] for day in WEEKDAY_ORDER])
-    ax.set_ylabel("Gross profit, INR millions")
+    ax.set_ylabel("Gross profit, USD thousands")
+    lift = max(profit) * 0.025
     for xpos, value in zip(x, profit):
-        ax.text(xpos, value + 0.05, f"{value:.2f}", ha="center", va="bottom", fontsize=8, color=INK)
-    ax.set_ylim(0, max(profit) * 1.2)
+        ax.text(xpos, value + lift, f"{value:.2f}", ha="center", va="bottom", fontsize=8, color=INK)
+    ax.set_ylim(0, max(profit) * 1.22)
     ax.legend(handles=[Patch(facecolor=NAVY, label="Weekday"), Patch(facecolor=GOLD, label="Weekend")], loc="upper left")
     ax.set_title("Friday produces the most profit. Sunday does not behave like Saturday.", loc="left", color=SLATE)
 

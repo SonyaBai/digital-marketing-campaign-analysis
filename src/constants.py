@@ -14,6 +14,18 @@ sql/06_targeting.sql and sql/08_reallocation.sql repeat these names.
 
 from __future__ import annotations
 
+from decimal import Decimal
+
+# February 2021 monthly average: Indian rupees per one US dollar.
+# Board of Governors of the Federal Reserve System, Foreign Exchange Rates
+# G.5, released 1 March 2021. The February column is the average of daily
+# noon buying rates in New York for cable transfers.
+# https://www.federalreserve.gov/releases/g5/20210301/
+# The RBI Handbook of Statistics, Table 204, gives 72.7565 for the same
+# month (average of the FBIL/RBI reference rate). This project uses the
+# Federal Reserve figure as the single fixed rate.
+INR_PER_USD = Decimal("72.8053")
+
 CAMPAIGN_LABELS: dict[str, str] = {
     "youtube_blogger": "YouTube blogger",
     "facebook_retargeting": "Facebook retargeting",
@@ -105,7 +117,7 @@ PAUSE_CAMPAIGNS: tuple[str, ...] = (
 # Near breakeven. Keep the current spend and require a creative test to clear 0% ROMI.
 TEST_CAMPAIGNS: tuple[str, ...] = ("facebook_tier1",)
 
-# Profitable, but a weaker use of the next rupee than the scale list.
+# Profitable, but a weaker use of the next dollar than the scale list.
 HOLD_CAMPAIGNS: tuple[str, ...] = (
     "banner_partner",
     "instagram_blogger",

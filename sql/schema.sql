@@ -2,7 +2,11 @@
 -- Source file: data/raw/Marketing.csv
 -- (Kaggle, "Analyze the Marketing Spending", sinderpreet, CC0).
 --
--- Money is INR. gross_profit = revenue - mark_spent. The extract has no
+-- Money is US dollars. Each campaign-day in the raw file (INR) is divided by
+-- 72.8053, the Federal Reserve G.5 monthly average for February 2021
+-- (rupees per dollar), and rounded half-up to the cent.
+-- https://www.federalreserve.gov/releases/g5/20210301/
+-- gross_profit = revenue - mark_spent. The extract has no
 -- product cost, so this is profit after media spend only.
 -- campaign_name is lowercased. campaign_name_raw keeps the source text
 -- (the only defect is facebOOK_tier2 on campaign_id 348934).

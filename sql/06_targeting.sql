@@ -13,16 +13,16 @@
 
 SELECT
     targeting,
-    ROUND(SUM(mark_spent), 2) AS spend_inr,
-    ROUND(SUM(revenue), 2) AS revenue_inr,
-    ROUND(SUM(revenue) - SUM(mark_spent), 2) AS gross_profit_inr,
+    ROUND(SUM(mark_spent), 2) AS spend_usd,
+    ROUND(SUM(revenue), 2) AS revenue_usd,
+    ROUND(SUM(revenue) - SUM(mark_spent), 2) AS gross_profit_usd,
     ROUND(100.0 * (SUM(revenue) - SUM(mark_spent)) / SUM(mark_spent), 2) AS romi_pct,
     ROUND(100.0 * SUM(clicks) / SUM(impressions), 3) AS ctr_pct,
     ROUND(100.0 * SUM(leads) / SUM(clicks), 2) AS click_to_lead_pct,
     ROUND(100.0 * SUM(orders) / SUM(leads), 2) AS lead_to_order_pct,
-    ROUND(SUM(mark_spent) / SUM(clicks), 2) AS cpc_inr,
-    ROUND(SUM(mark_spent) / SUM(orders), 2) AS cac_inr,
-    ROUND(SUM(revenue) / SUM(orders), 2) AS aov_inr,
+    ROUND(SUM(mark_spent) / SUM(clicks), 2) AS cpc_usd,
+    ROUND(SUM(mark_spent) / SUM(orders), 2) AS cac_usd,
+    ROUND(SUM(revenue) / SUM(orders), 2) AS aov_usd,
     SUM(orders) AS orders
 FROM campaign_daily
 GROUP BY targeting
@@ -30,9 +30,9 @@ ORDER BY (SUM(revenue) - SUM(mark_spent)) / SUM(mark_spent) DESC;
 
 SELECT
     targeting,
-    ROUND(SUM(mark_spent), 2) AS spend_inr,
-    ROUND(SUM(revenue), 2) AS revenue_inr,
-    ROUND(SUM(revenue) - SUM(mark_spent), 2) AS gross_profit_inr,
+    ROUND(SUM(mark_spent), 2) AS spend_usd,
+    ROUND(SUM(revenue), 2) AS revenue_usd,
+    ROUND(SUM(revenue) - SUM(mark_spent), 2) AS gross_profit_usd,
     ROUND(100.0 * (SUM(revenue) - SUM(mark_spent)) / SUM(mark_spent), 2) AS romi_pct,
     ROUND(100.0 * SUM(clicks) / SUM(impressions), 3) AS ctr_pct,
     ROUND(100.0 * SUM(orders) / SUM(leads), 2) AS lead_to_order_pct

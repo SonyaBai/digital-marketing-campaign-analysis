@@ -16,7 +16,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.cleaning import clean_marketing, load_raw
-from src.formatters import rupee_amount
+from src.formatters import money_amount
 
 RAW_PATH = ROOT / "data" / "raw" / "Marketing.csv"
 SCHEMA_PATH = ROOT / "sql" / "schema.sql"
@@ -52,12 +52,12 @@ def build_database(db_path: Path = DB_PATH) -> Path:
                 row.city_tier,
                 row.targeting,
                 int(row.impressions),
-                float(rupee_amount(row.mark_spent_paise)),
+                float(money_amount(row.spend_cents)),
                 int(row.clicks),
                 int(row.leads),
                 int(row.orders),
-                float(rupee_amount(row.revenue_paise)),
-                float(rupee_amount(row.gross_profit_paise)),
+                float(money_amount(row.revenue_cents)),
+                float(money_amount(row.gross_profit_cents)),
                 row.weekday,
                 int(row.is_weekend),
             )
@@ -72,7 +72,7 @@ def build_database(db_path: Path = DB_PATH) -> Path:
         connection.close()
 
     print(f"Loaded {count} rows into {db_path.relative_to(ROOT)}")
-    print(f"Spend ₹{spend:,.2f}   Revenue ₹{revenue:,.2f}")
+    print(f"Spend ${spend:,.2f}   Revenue ${revenue:,.2f}")
     return db_path
 
 

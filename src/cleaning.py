@@ -20,6 +20,7 @@ import pandas as pd
 from decimal import Decimal, ROUND_HALF_UP
 
 from src.constants import (
+    INR_PER_USD,
     PLATFORM_BY_CAMPAIGN,
     RAW_COLUMNS,
     TARGETING_BY_CAMPAIGN,
@@ -59,13 +60,25 @@ def _to_paise(value: object) -> int:
     return int((amount * 100).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
 
 
+def _paise_to_cents(paise: int) -> int:
+    """Convert rupee paise to US cents at the fixed February 2021 rate.
+
+    One paisa and one cent are both a hundredth of the major unit, so
+    cents = paise / INR_PER_USD. Each campaign-day is rounded half-up to
+    the cent. Totals are sums of those cents.
+    """
+    return int((Decimal(int(paise)) / INR_PER_USD).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+
+
 def clean_marketing(raw: pd.DataFrame) -> pd.DataFrame:
     """Return the analysis table, one row per source row, with derived fields.
 
-    Money is carried both as rupee strings' exact paise (``*_paise``) and as
-    those paise converted for export. Aggregations should sum the paise
-    columns. Row-level rates are not stored: several days have zero leads or
-    zero orders, and the KPIs in this project are ratios of sums.
+    Spend and revenue are converted from rupees to US dollars at
+    ``INR_PER_USD`` and stored as integer cents. Each campaign-day is
+    rounded half-up to the cent. Gross profit is the difference of those
+    cents, not a second conversion. Aggregations should sum the cent
+    columns. Row-level rates are not stored: several days have zero leads
+    or zero orders, and the KPIs in this project are ratios of sums.
     """
     frame = raw.copy()
     frame["campaign_name_raw"] = frame["campaign_name"].str.strip()
@@ -89,8 +102,12 @@ def clean_marketing(raw: pd.DataFrame) -> pd.DataFrame:
     frame["weekday"] = frame["c_date"].dt.day_name()
     frame["is_weekend"] = (frame["c_date"].dt.day_of_week >= 5).astype(int)
     frame["gross_profit_paise"] = frame["revenue_paise"] - frame["mark_spent_paise"]
-
     _validate(frame)
+
+    frame["spend_cents"] = frame["mark_spent_paise"].map(_paise_to_cents).astype("int64")
+    frame["revenue_cents"] = frame["revenue_paise"].map(_paise_to_cents).astype("int64")
+    frame["gross_profit_cents"] = frame["revenue_cents"] - frame["spend_cents"]
+
     columns = [
         "id",
         "c_date",
@@ -102,12 +119,12 @@ def clean_marketing(raw: pd.DataFrame) -> pd.DataFrame:
         "city_tier",
         "targeting",
         "impressions",
-        "mark_spent_paise",
+        "spend_cents",
         "clicks",
         "leads",
         "orders",
-        "revenue_paise",
-        "gross_profit_paise",
+        "revenue_cents",
+        "gross_profit_cents",
         "weekday",
         "is_weekend",
     ]
@@ -115,8 +132,8 @@ def clean_marketing(raw: pd.DataFrame) -> pd.DataFrame:
 
 
 def export_frame(clean: pd.DataFrame) -> pd.DataFrame:
-    """CSV-ready frame. Money is written from paise so the cents survive a reload."""
-    from src.formatters import rupee_amount
+    """CSV-ready frame. Money is US dollars, written from integer cents."""
+    from src.formatters import money_amount
 
     out = pd.DataFrame(
         {
@@ -130,12 +147,12 @@ def export_frame(clean: pd.DataFrame) -> pd.DataFrame:
             "city_tier": clean["city_tier"],
             "targeting": clean["targeting"],
             "impressions": clean["impressions"].astype(int),
-            "mark_spent": clean["mark_spent_paise"].map(rupee_amount),
+            "mark_spent": clean["spend_cents"].map(money_amount),
             "clicks": clean["clicks"].astype(int),
             "leads": clean["leads"].astype(int),
             "orders": clean["orders"].astype(int),
-            "revenue": clean["revenue_paise"].map(rupee_amount),
-            "gross_profit": clean["gross_profit_paise"].map(rupee_amount),
+            "revenue": clean["revenue_cents"].map(money_amount),
+            "gross_profit": clean["gross_profit_cents"].map(money_amount),
             "weekday": clean["weekday"],
             "is_weekend": clean["is_weekend"].astype(int),
         }
@@ -159,6 +176,8 @@ def _validate(frame: pd.DataFrame) -> None:
     if int((frame["campaign_name"] != frame["campaign_name"].str.lower()).sum()) != 0:
         raise ValueError("Campaign names were not lowercased.")
 
+    if int(frame["mark_spent_paise"].sum()) != 3_059_087_982 or int(frame["revenue_paise"].sum()) != 4_288_936_600:
+        raise ValueError("Raw rupee totals do not match the published extract.")
     if int((frame["impressions"] <= 0).sum()) or int((frame["mark_spent_paise"] <= 0).sum()):
         raise ValueError("Impressions and spend must be positive.")
     if int((frame["clicks"] > frame["impressions"]).sum()):

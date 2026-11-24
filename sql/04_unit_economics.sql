@@ -12,22 +12,22 @@
 
 SELECT
     'portfolio' AS segment,
-    ROUND(SUM(mark_spent) / SUM(clicks), 2) AS cpc_inr,
-    ROUND(SUM(mark_spent) / SUM(leads), 2) AS cpl_inr,
-    ROUND(SUM(mark_spent) / SUM(orders), 2) AS cac_inr,
-    ROUND(SUM(revenue) / SUM(orders), 2) AS aov_inr,
-    ROUND(SUM(revenue) - SUM(mark_spent), 2) AS gross_profit_inr,
-    ROUND((SUM(revenue) - SUM(mark_spent)) / SUM(orders), 2) AS profit_per_order_inr
+    ROUND(SUM(mark_spent) / SUM(clicks), 2) AS cpc_usd,
+    ROUND(SUM(mark_spent) / SUM(leads), 2) AS cpl_usd,
+    ROUND(SUM(mark_spent) / SUM(orders), 2) AS cac_usd,
+    ROUND(SUM(revenue) / SUM(orders), 2) AS aov_usd,
+    ROUND(SUM(revenue) - SUM(mark_spent), 2) AS gross_profit_usd,
+    ROUND((SUM(revenue) - SUM(mark_spent)) / SUM(orders), 2) AS profit_per_order_usd
 FROM campaign_daily;
 
 SELECT
     campaign_name,
-    ROUND(SUM(mark_spent) / SUM(clicks), 2) AS cpc_inr,
-    ROUND(SUM(mark_spent) / SUM(leads), 2) AS cpl_inr,
-    ROUND(SUM(mark_spent) / SUM(orders), 2) AS cac_inr,
-    ROUND(SUM(revenue) / SUM(orders), 2) AS aov_inr,
-    ROUND(SUM(revenue) - SUM(mark_spent), 2) AS gross_profit_inr,
-    ROUND((SUM(revenue) - SUM(mark_spent)) / SUM(orders), 2) AS profit_per_order_inr,
+    ROUND(SUM(mark_spent) / SUM(clicks), 2) AS cpc_usd,
+    ROUND(SUM(mark_spent) / SUM(leads), 2) AS cpl_usd,
+    ROUND(SUM(mark_spent) / SUM(orders), 2) AS cac_usd,
+    ROUND(SUM(revenue) / SUM(orders), 2) AS aov_usd,
+    ROUND(SUM(revenue) - SUM(mark_spent), 2) AS gross_profit_usd,
+    ROUND((SUM(revenue) - SUM(mark_spent)) / SUM(orders), 2) AS profit_per_order_usd,
     SUM(orders) AS orders
 FROM campaign_daily
 GROUP BY campaign_name
